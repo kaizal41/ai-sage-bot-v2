@@ -13,7 +13,7 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 # Gemini Setup
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
-    # Model name ကို အတိအကျ ပြင်ထားပါတယ်
+    # ဖြတ်လမ်းနည်းနဲ့ model ကို တည့်တည့်ခေါ်မယ်
     model = genai.GenerativeModel('gemini-1.5-flash')
 else:
     model = None
@@ -67,13 +67,12 @@ def handle_all_messages(message):
     )
 
     try:
-        # generation_config ထည့်ပေးခြင်းဖြင့် ပိုငြိမ်အောင်လုပ်တယ်
-        response = model.generate_content(
-            f"{system_prompt}\n\nContext: {price_info}\nUser: {user_text}"
-        )
+        # model.generate_content ကို တိုက်ရိုက်သုံးမယ်
+        response = model.generate_content(f"{system_prompt}\n\nContext: {price_info}\nUser: {user_text}")
         bot.send_message(chat_id, response.text)
     except Exception as e:
-        bot.send_message(chat_id, f"Error တက်နေတုန်းပဲ: {str(e)}")
+        # Error ရှင်းရှင်းလင်းလင်း မြင်ရအောင်
+        bot.send_message(chat_id, f"Error Details: {str(e)}")
 
 @app.route('/')
 def index():
