@@ -19,7 +19,7 @@ def get_crypto_price(coin_id="bitcoin"):
     except: return None
 
 def call_gemini_api(prompt):
-    # Gemini 1.5 Flash အစား 1.0 Pro ကို ပြောင်းသုံးထားပါတယ် (404 Error ကင်းဝေးစေရန်)
+   
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key={GEMINI_API_KEY}"
     
     payload = {
@@ -43,7 +43,7 @@ def call_gemini_api(prompt):
 def start(message):
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add("BTC Price 💰", "LTC Price 🚀", "Trading Tips 💡")
-    bot.send_message(message.chat.id, "ဟေ့လူ... Model ပြောင်းပြီး စမ်းထားတယ်။ ဘာမေးမလဲ?", reply_markup=markup)
+    bot.send_message(message.chat.id, "Crypto Ai assist မှကြိုဆိုပါတယ်။", reply_markup=markup)
 
 @bot.message_handler(func=lambda message: True)
 def handle_all_messages(message):
