@@ -10,9 +10,10 @@ app = Flask(__name__)
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# Gemini Setup - API Key ရှိမှ လုပ်မယ်
+# Gemini Setup
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
+    # Model name ကို အတိအကျ ပြင်ထားပါတယ်
     model = genai.GenerativeModel('gemini-1.5-flash')
 else:
     model = None
@@ -39,15 +40,15 @@ def webhook():
 def start(message):
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add("BTC Price 💰", "LTC Price 🚀", "Trading Tips 💡")
-    bot.send_message(message.chat.id, "ဟေ့လူ... နေကောင်းလား! Gemini Sage ပြန်လာပြီ။ ဘာမေးချင်လဲ?", reply_markup=markup)
+    bot.send_message(message.chat.id, "ဟေ့လူ... အခုတစ်ခါတော့ တကယ်လာပြီ! ဘာမေးချင်လဲ?", reply_markup=markup)
 
 @bot.message_handler(func=lambda message: True)
 def handle_all_messages(message):
     user_text = message.text
     chat_id = message.chat.id
     
-    if not GEMINI_API_KEY:
-        bot.send_message(chat_id, "Error: Vercel Settings မှာ GEMINI_API_KEY ထည့်ဖို့ မမေ့နဲ့ဦးဘရို။")
+    if not model:
+        bot.send_message(chat_id, "Error: Gemini API Key မရှိသေးဘူးဘရို။")
         return
 
     price_info = ""
@@ -62,14 +63,17 @@ def handle_all_messages(message):
     system_prompt = (
         "You are 'The Crypto Sage', a chill Burmese friend. "
         "Talk naturally in Burmese. Keep terms like Bitcoin, USDT, Entry in English. "
-        "Use the provided context to answer questions."
+        "Use the provided context to answer questions concisely."
     )
 
     try:
-        response = model.generate_content(f"{system_prompt}\n\nContext: {price_info}\nUser: {user_text}")
+        # generation_config ထည့်ပေးခြင်းဖြင့် ပိုငြိမ်အောင်လုပ်တယ်
+        response = model.generate_content(
+            f"{system_prompt}\n\nContext: {price_info}\nUser: {user_text}"
+        )
         bot.send_message(chat_id, response.text)
     except Exception as e:
-        bot.send_message(chat_id, f"Error: {str(e)}")
+        bot.send_message(chat_id, f"Error တက်နေတုန်းပဲ: {str(e)}")
 
 @app.route('/')
 def index():
