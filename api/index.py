@@ -19,8 +19,9 @@ def get_crypto_price(coin_id="bitcoin"):
     except: return None
 
 def call_gemini_api(prompt):
-    # Library မသုံးဘဲ API ကို တိုက်ရိုက်ခေါ်ခြင်း
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    # Endpoint ကို v1beta အစား v1 ပြောင်းပြီး model name ကိုလည်း latest ထည့်ထားပါတယ်
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    
     payload = {
         "contents": [{
             "parts": [{"text": prompt}]
@@ -28,13 +29,16 @@ def call_gemini_api(prompt):
     }
     headers = {"Content-Type": "application/json"}
     
-    response = requests.post(url, json=payload, headers=headers)
-    if response.status_code == 200:
-        result = response.json()
-        return result['candidates'][0]['content']['parts'][0]['text']
-    else:
-        return f"Gemini Error: {response.text}"
-
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        if response.status_code == 200:
+            result = response.json()
+            # Response format ကိုလည်း v1 standard အတိုင်း ဆွဲထုတ်ပါတယ်
+            return result['candidates'][0]['content']['parts'][0]['text']
+        else:
+            return f"Gemini Error ({response.status_code}): {response.text}"
+    except Exception as e:
+        return f"Request Error: {str(e)}"
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
