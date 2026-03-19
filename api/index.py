@@ -5,7 +5,7 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
-# Config
+# Config - Vercel Settings ထဲမှာ ထည့်ထားရမယ်
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
@@ -19,7 +19,7 @@ def get_crypto_price(coin_id="bitcoin"):
     except: return None
 
 def call_gemini_api(prompt):
-    # Endpoint ကို v1beta အစား v1 ပြောင်းပြီး model name ကိုလည်း latest ထည့်ထားပါတယ်
+    # v1 (Stable) ကို သုံးပြီး model name ကို ညှိထားပါတယ်
     url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     
     payload = {
@@ -30,26 +30,28 @@ def call_gemini_api(prompt):
     headers = {"Content-Type": "application/json"}
     
     try:
-        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        response = requests.post(url, json=payload, headers=headers, timeout=15)
         if response.status_code == 200:
             result = response.json()
-            # Response format ကိုလည်း v1 standard အတိုင်း ဆွဲထုတ်ပါတယ်
             return result['candidates'][0]['content']['parts'][0]['text']
         else:
+            # Error message အပြည့်အစုံကို သိရအောင်
             return f"Gemini Error ({response.status_code}): {response.text}"
     except Exception as e:
         return f"Request Error: {str(e)}"
+
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add("BTC Price 💰", "LTC Price 🚀", "Trading Tips 💡")
-    bot.send_message(message.chat.id, "ဟေ့လူ... အခုနည်းလမ်းက အသေချာဆုံးပဲ။ စမ်းကြည့်လိုက်!", reply_markup=markup)
+    bot.send_message(message.chat.id, "ဟေ့လူ... အခုတစ်ခါတော့ တကယ်လာပြီ! ဘာမေးချင်လဲ?", reply_markup=markup)
 
 @bot.message_handler(func=lambda message: True)
 def handle_all_messages(message):
     user_text = message.text
     chat_id = message.chat.id
     
+    # ဈေးနှုန်း context ယူမယ်
     price_info = ""
     lower_text = user_text.lower()
     if "btc" in lower_text or "bitcoin" in lower_text:
@@ -60,25 +62,24 @@ def handle_all_messages(message):
         if p: price_info = f"Current Litecoin Price: ${p} USDT."
 
     system_prompt = (
-        "You are 'The Crypto Sage', a friendly Burmese youth. "
-        "Talk naturally in Burmese. Use English for terms like Bitcoin, Entry, Long. "
-        "Keep it concise. Here is the context: "
+        "You are 'The Crypto Sage', a chill Burmese friend. "
+        "Talk naturally in Burmese. Keep terms like Bitcoin, USDT, Entry in English. "
+        "Use the provided context to answer concisely."
     )
 
-    try:
-        full_prompt = f"{system_prompt} {price_info}\nUser says: {user_text}"
-        ai_response = call_gemini_api(full_prompt)
-        bot.send_message(chat_id, ai_response)
-    except Exception as e:
-        bot.send_message(chat_id, f"Error: {str(e)}")
+    full_prompt = f"{system_prompt}\n\nContext: {price_info}\nUser: {user_text}"
+    ai_response = call_gemini_api(full_prompt)
+    bot.send_message(chat_id, ai_response)
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    json_string = request.get_data().decode('utf-8')
-    update = telebot.types.Update.de_json(json_string)
-    bot.process_new_updates([update])
-    return "ok", 200
+    if request.method == "POST":
+        json_string = request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return "ok", 200
+    return "forbidden", 403
 
 @app.route('/')
 def index():
-    return "Sage Direct API is Live"
+    return "Sage is Live"
