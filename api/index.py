@@ -19,9 +19,8 @@ def get_crypto_price(coin_id="bitcoin"):
     except: return None
 
 def call_gemini_api(prompt):
-    # Endpoint ကို v1beta ပြန်ပြောင်းပြီး model name ကို prefix အပြည့်အစုံနဲ့ သုံးထားပါတယ်
-    # ဒါက 404 error ကို အထိရောက်ဆုံး ဖြေရှင်းနိုင်တဲ့ နည်းလမ်းပါ
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    # Stable v1 Endpoint ကို သုံးပြီး Model name ကို ပြင်ထားပါတယ်
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     
     payload = {
         "contents": [{
@@ -44,14 +43,13 @@ def call_gemini_api(prompt):
 def start(message):
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add("BTC Price 💰", "LTC Price 🚀", "Trading Tips 💡")
-    bot.send_message(message.chat.id, "ဟေ့လူ... အခုတစ်ခါတော့ တကယ်လာပြီ! ဘာမေးချင်လဲ?", reply_markup=markup)
+    bot.send_message(message.chat.id, "ဟေ့လူ... အခုတစ်ခါတော့ သေချာပြင်ပေးထားတယ်။ စမ်းကြည့်လိုက်!", reply_markup=markup)
 
 @bot.message_handler(func=lambda message: True)
 def handle_all_messages(message):
     user_text = message.text
     chat_id = message.chat.id
     
-    # Context gathering
     price_info = ""
     lower_text = user_text.lower()
     if "btc" in lower_text or "bitcoin" in lower_text:
@@ -62,24 +60,22 @@ def handle_all_messages(message):
         if p: price_info = f"Current Litecoin Price: ${p} USDT."
 
     system_prompt = (
-        "You are 'The Crypto Sage', a chill Burmese friend who is an expert in crypto. "
-        "Talk naturally in Burmese. Use English for technical terms (Long, Short, Entry). "
-        "Answer concisely based on the context."
+        "You are 'The Crypto Sage', a friendly Burmese youth. "
+        "Talk naturally in Burmese. Use English for terms like Bitcoin, Entry, Long. "
+        "Answer concisely. Context: "
     )
 
-    full_prompt = f"{system_prompt}\n\nContext: {price_info}\nUser: {user_text}"
+    full_prompt = f"{system_prompt} {price_info}\nUser: {user_text}"
     ai_response = call_gemini_api(full_prompt)
     bot.send_message(chat_id, ai_response)
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    if request.method == "POST":
-        json_string = request.get_data().decode('utf-8')
-        update = telebot.types.Update.de_json(json_string)
-        bot.process_new_updates([update])
-        return "ok", 200
-    return "forbidden", 403
+    json_string = request.get_data().decode('utf-8')
+    update = telebot.types.Update.de_json(json_string)
+    bot.process_new_updates([update])
+    return "ok", 200
 
 @app.route('/')
 def index():
-    return "Sage is Live and Fixed"
+    return "Sage is Online"
