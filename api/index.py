@@ -19,13 +19,11 @@ def get_crypto_price(coin_id="bitcoin"):
     except: return None
 
 def call_gemini_api(prompt):
-   
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key={GEMINI_API_KEY}"
+    # Endpoint URL ကို v1 သုံးပြီး model name ကို prefix ပါအောင် ထည့်ထားပါတယ်
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     
     payload = {
-        "contents": [{
-            "parts": [{"text": prompt}]
-        }]
+        "contents": [{"parts": [{"text": prompt}]}]
     }
     headers = {"Content-Type": "application/json"}
     
@@ -35,15 +33,14 @@ def call_gemini_api(prompt):
             result = response.json()
             return result['candidates'][0]['content']['parts'][0]['text']
         else:
+            # Error တက်ရင် ဘာကြောင့်လဲဆိုတာ အသေးစိတ် သိရအောင်
             return f"Gemini Error ({response.status_code}): {response.text}"
     except Exception as e:
-        return f"Request Error: {str(e)}"
+        return f"Connection Error: {str(e)}"
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add("BTC Price 💰", "LTC Price 🚀", "Trading Tips 💡")
-    bot.send_message(message.chat.id, "Crypto Ai assist မှကြိုဆိုပါတယ်။", reply_markup=markup)
+    bot.send_message(message.chat.id, "ဟေ့လူ... Crypto Sage ပြန်လာပြီ! ဘာမေးချင်လဲ?")
 
 @bot.message_handler(func=lambda message: True)
 def handle_all_messages(message):
@@ -51,15 +48,11 @@ def handle_all_messages(message):
     chat_id = message.chat.id
     
     price_info = ""
-    lower_text = user_text.lower()
-    if "btc" in lower_text or "bitcoin" in lower_text:
+    if "btc" in user_text.lower():
         p = get_crypto_price("bitcoin")
-        if p: price_info = f"Current Bitcoin Price: ${p:,} USDT."
-    elif "ltc" in lower_text or "litecoin" in lower_text:
-        p = get_crypto_price("litecoin")
-        if p: price_info = f"Current Litecoin Price: ${p} USDT."
+        if p: price_info = f"Current BTC Price: ${p:,} USDT."
 
-    system_prompt = "You are 'The Crypto Sage', a friendly Burmese boy. Answer in Burmese naturally."
+    system_prompt = "You are 'The Crypto Sage', a chill Burmese friend. Talk naturally in Burmese."
     full_prompt = f"{system_prompt}\nContext: {price_info}\nUser: {user_text}"
     
     ai_response = call_gemini_api(full_prompt)
@@ -74,4 +67,4 @@ def webhook():
 
 @app.route('/')
 def index():
-    return "Sage 1.0 Pro is Live"
+    return "Bot is Live"
