@@ -12,7 +12,7 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 bot = telebot.TeleBot(BOT_TOKEN, threaded=False)
 
 def call_gemini_api(prompt):
-    # Endpoint ကို v1 ပြောင်းပြီး model name ကို gemini-1.5-flash လို့ အသေရေးထားပါတယ်
+    # v1 endpoint ကို သုံးပြီး gemini-1.5-flash ကို အောက်ကအတိုင်း တိုက်ရိုက်ခေါ်ပါမယ်
     url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     
     payload = {
@@ -26,23 +26,22 @@ def call_gemini_api(prompt):
         response = requests.post(url, json=payload, headers=headers, timeout=15)
         if response.status_code == 200:
             result = response.json()
-            # Response ကနေ စာသားကို သေချာထုတ်ယူခြင်း
             return result['candidates'][0]['content']['parts'][0]['text']
         else:
+            # ဘာကြောင့် Error တက်လဲဆိုတာ အသေးစိတ် သိရအောင် ပြန်ပြပါမယ်
             return f"Gemini Error ({response.status_code}): {response.text}"
     except Exception as e:
         return f"Request Error: {str(e)}"
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(message.chat.id, "ဟေ့လူ... Crypto Sage အဆင်သင့်ပဲ! ဘာမေးချင်လဲ?")
+    bot.send_message(message.chat.id, "ဟေ့လူ... Crypto Sage အဆင်သင့်ဖြစ်ပြီ! ဘာမေးချင်လဲ?")
 
 @bot.message_handler(func=lambda message: True)
 def handle_all_messages(message):
     user_text = message.text
     chat_id = message.chat.id
     
-    # System Instruction ကို ဒီမှာပဲ တည့်ထည့်လိုက်မယ်
     system_prompt = "You are 'The Crypto Sage', a chill Burmese friend. Talk naturally in Burmese language."
     full_prompt = f"{system_prompt}\nUser: {user_text}"
     
@@ -60,4 +59,4 @@ def webhook():
 
 @app.route('/')
 def index():
-    return "Sage is Live"
+    return "Sage is Live and Connected"
